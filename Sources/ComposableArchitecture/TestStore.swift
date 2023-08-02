@@ -539,8 +539,8 @@ public final class TestStore<State, Action> {
   ///   - prepareDependencies: A closure that can be used to override dependencies that will be
   ///     accessed during the test. These dependencies will be used when producing the initial
   ///     state.
-	@_disfavoredOverload
   @available(*, deprecated, message: "State must be equatable to perform assertions.")
+	@_disfavoredOverload
   public init<R: Reducer>(
     initialState: @autoclosure () -> State,
     @ReducerBuilder<State, Action> reducer: () -> R,
