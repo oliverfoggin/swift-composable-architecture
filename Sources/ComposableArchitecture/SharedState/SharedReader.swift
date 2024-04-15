@@ -12,7 +12,7 @@ public struct SharedReader<Value, Persistence> {
         }
 
         deinit {
-            print("💣")
+            print("💣 SharedReader")
             onCancel()
         }
     }
@@ -28,7 +28,7 @@ public struct SharedReader<Value, Persistence> {
   }
 
   init(reference: some Reference<Value>) {
-      self.init(reference: reference, keyPath: \Value.self, onCancel: {})
+      self.init(reference: reference, keyPath: \Value.self, onCancel: { print(\Value.self) })
   }
 
   public init(projectedValue: SharedReader) {
@@ -44,7 +44,7 @@ public struct SharedReader<Value, Persistence> {
         line: line
       ),
       keyPath: \Value.self,
-      onCancel: {}
+      onCancel: { print(\Value.self) }
     )
   }
 
@@ -67,7 +67,7 @@ public struct SharedReader<Value, Persistence> {
     SharedReader<Member, Any>(
       reference: self.reference,
       keyPath: self.keyPath.appending(path: keyPath)!,
-      onCancel: {}
+      onCancel: { print(self.keyPath.appending(path: keyPath)!) }
     )
   }
 
@@ -81,7 +81,9 @@ public struct SharedReader<Value, Persistence> {
       keyPath: self.keyPath.appending(
         path: keyPath.appending(path: \.[default:DefaultSubscript(initialValue)])
       )!,
-      onCancel: {}
+      onCancel: { print(self.keyPath.appending(
+        path: keyPath.appending(path: \.[default:DefaultSubscript(initialValue)])
+      )!) }
     )
   }
 

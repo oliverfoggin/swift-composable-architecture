@@ -101,6 +101,8 @@ extension SharedReader where Persistence: PersistenceReaderKey<Value> {
       }(),
       keyPath: \Value.self,
       onCancel: {
+          print("🔥🔥🔥🔥🔥🔥🔥")
+          print(value)
           @Dependency(PersistentReferencesKey.self) var references
           return references.withValue {
               if let (count, reference) = $0[persistenceKey] {
