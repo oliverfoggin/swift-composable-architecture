@@ -5,16 +5,29 @@ import Combine
 @dynamicMemberLookup
 @propertyWrapper
 public struct SharedReader<Value, Persistence> {
+    class ReferenceClass {
+        let onCancel: () -> Void
+        init(onCancel: @escaping () -> Void) {
+            self.onCancel = onCancel
+        }
+
+        deinit {
+            onCancel()
+        }
+    }
+
+    private let refClass: ReferenceClass
   fileprivate let reference: any Reference
   fileprivate let keyPath: AnyKeyPath
 
-  init(reference: any Reference, keyPath: AnyKeyPath) {
+    init(reference: any Reference, keyPath: AnyKeyPath, onCancel: @escaping () -> Void) {
     self.reference = reference
     self.keyPath = keyPath
+        self.refClass = .init(onCancel: onCancel)
   }
 
   init(reference: some Reference<Value>) {
-    self.init(reference: reference, keyPath: \Value.self)
+      self.init(reference: reference, keyPath: \Value.self, onCancel: {})
   }
 
   public init(projectedValue: SharedReader) {
@@ -29,7 +42,8 @@ public struct SharedReader<Value, Persistence> {
         fileID: fileID,
         line: line
       ),
-      keyPath: \Value.self
+      keyPath: \Value.self,
+      onCancel: {}
     )
   }
 
@@ -51,7 +65,8 @@ public struct SharedReader<Value, Persistence> {
   ) -> SharedReader<Member, Any> {
     SharedReader<Member, Any>(
       reference: self.reference,
-      keyPath: self.keyPath.appending(path: keyPath)!
+      keyPath: self.keyPath.appending(path: keyPath)!,
+      onCancel: {}
     )
   }
 
@@ -64,7 +79,8 @@ public struct SharedReader<Value, Persistence> {
       reference: self.reference,
       keyPath: self.keyPath.appending(
         path: keyPath.appending(path: \.[default:DefaultSubscript(initialValue)])
-      )!
+      )!,
+      onCancel: {}
     )
   }
 

@@ -13,6 +13,18 @@ import XCTestDynamicOverlay
 @dynamicMemberLookup
 @propertyWrapper
 public struct Shared<Value, Persistence> {
+    class ReferenceClass {
+        let onCancel: () -> Void
+        init(onCancel: @escaping () -> Void) {
+            self.onCancel = onCancel
+        }
+
+        deinit {
+            onCancel()
+        }
+    }
+
+    private let refClass: ReferenceClass
   private let reference: any Reference
   private let keyPath: AnyKeyPath
 
@@ -75,9 +87,10 @@ public struct Shared<Value, Persistence> {
     }
   #endif
 
-  init(reference: any Reference, keyPath: AnyKeyPath) {
+    init(reference: any Reference, keyPath: AnyKeyPath, onCancel: @escaping () -> Void) {
     self.reference = reference
     self.keyPath = keyPath
+        self.refClass = .init(onCancel: onCancel)
   }
 
   public init(
@@ -91,7 +104,8 @@ public struct Shared<Value, Persistence> {
         fileID: fileID,
         line: line
       ),
-      keyPath: \Value.self
+      keyPath: \Value.self,
+      onCancel: {}
     )
   }
 
@@ -103,7 +117,7 @@ public struct Shared<Value, Persistence> {
     dynamicMember keyPath: WritableKeyPath<Value, Member>
   ) -> Shared<Member, Any> {
     Shared<Member, Any>(
-      reference: self.reference, keyPath: self.keyPath.appending(path: keyPath)!
+      reference: self.reference, keyPath: self.keyPath.appending(path: keyPath)!, onCancel: {}
     )
   }
 
@@ -116,7 +130,8 @@ public struct Shared<Value, Persistence> {
       reference: self.reference,
       keyPath: self.keyPath.appending(
         path: keyPath.appending(path: \.[default:DefaultSubscript(initialValue)])
-      )!
+      )!,
+      onCancel: {}
     )
   }
 
@@ -303,12 +318,13 @@ extension Shared {
   ) -> SharedReader<Member, Any> {
     SharedReader<Member, Any>(
       reference: self.reference,
-      keyPath: self.keyPath.appending(path: keyPath)!
+      keyPath: self.keyPath.appending(path: keyPath)!,
+      onCancel: {}
     )
   }
 
   public var reader: SharedReader<Value, Persistence> {
-    SharedReader(reference: self.reference, keyPath: self.keyPath)
+    SharedReader(reference: self.reference, keyPath: self.keyPath, onCancel: {})
   }
 
   public subscript<Member>(
@@ -320,7 +336,8 @@ extension Shared {
       reference: self.reference,
       keyPath: self.keyPath.appending(
         path: keyPath.appending(path: \.[default:DefaultSubscript(initialValue)])
-      )!
+      )!,
+      onCancel: {}
     )
   }
 }

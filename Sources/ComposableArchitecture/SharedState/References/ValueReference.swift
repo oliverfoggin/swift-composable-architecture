@@ -19,7 +19,8 @@ extension Shared where Persistence: PersistenceKey<Value> {
       reference: {
         @Dependency(PersistentReferencesKey.self) var references
         return references.withValue {
-          if let reference = $0[persistenceKey] {
+          if let (count, reference) = $0[persistenceKey] {
+            $0[persistenceKey] = (count + 1, reference)
             return reference
           } else {
             let reference = ValueReference(
@@ -28,12 +29,25 @@ extension Shared where Persistence: PersistenceKey<Value> {
               fileID: fileID,
               line: line
             )
-            $0[persistenceKey] = reference
+            $0[persistenceKey] = (1, reference)
             return reference
           }
         }
       }(),
-      keyPath: \Value.self
+      keyPath: \Value.self,
+      onCancel: {
+          @Dependency(PersistentReferencesKey.self) var references
+          return references.withValue {
+              if let (count, reference) = $0[persistenceKey] {
+                  if count == 1 {
+                      $0[persistenceKey] = nil
+                  } else {
+                      $0[persistenceKey] = (count - 1, reference)
+                  }
+                  return
+              }
+          }
+      }
     )
   }
 
@@ -70,8 +84,9 @@ extension SharedReader where Persistence: PersistenceReaderKey<Value> {
       reference: {
         @Dependency(PersistentReferencesKey.self) var references
         return references.withValue {
-          if let reference = $0[persistenceKey] {
-            return reference
+          if let (count, reference) = $0[persistenceKey] {
+              $0[persistenceKey] = (count + 1, reference)
+              return reference
           } else {
             let reference = ValueReference(
               initialValue: value,
@@ -79,12 +94,25 @@ extension SharedReader where Persistence: PersistenceReaderKey<Value> {
               fileID: fileID,
               line: line
             )
-            $0[persistenceKey] = reference
+            $0[persistenceKey] = (1, reference)
             return reference
           }
         }
       }(),
-      keyPath: \Value.self
+      keyPath: \Value.self,
+      onCancel: {
+          @Dependency(PersistentReferencesKey.self) var references
+          return references.withValue {
+              if let (count, reference) = $0[persistenceKey] {
+                  if count == 1 {
+                      $0[persistenceKey] = nil
+                  } else {
+                      $0[persistenceKey] = (count - 1, reference)
+                  }
+                  return
+              }
+          }
+      }
     )
   }
 
@@ -226,10 +254,10 @@ final class ValueReference<Value, Persistence>: Reference, @unchecked Sendable {
 #endif
 
 enum PersistentReferencesKey: DependencyKey {
-  static var liveValue: LockIsolated<[AnyHashable: any Reference]> {
+    static var liveValue: LockIsolated<[AnyHashable: (Int, any Reference)]> {
     LockIsolated([:])
   }
-  static var testValue: LockIsolated<[AnyHashable: any Reference]> {
+  static var testValue: LockIsolated<[AnyHashable: (Int, any Reference)]> {
     LockIsolated([:])
   }
 }
