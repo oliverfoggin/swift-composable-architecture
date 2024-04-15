@@ -12,6 +12,7 @@ public struct SharedReader<Value, Persistence> {
         }
 
         deinit {
+            print("💣")
             onCancel()
         }
     }

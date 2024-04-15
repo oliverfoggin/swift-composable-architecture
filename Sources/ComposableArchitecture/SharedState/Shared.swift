@@ -20,6 +20,7 @@ public struct Shared<Value, Persistence> {
         }
 
         deinit {
+            print("💣")
             onCancel()
         }
     }
